@@ -23,6 +23,7 @@ export default class GameController {
     this.stateService = stateService;
     this.boardSize = 8;
     this.gameState = new GameState();
+    this.isComputerTurnInProgress = false;
   }
 
   init() {
@@ -83,7 +84,7 @@ export default class GameController {
     const positionedCharacter = this.positions.find((pos) => pos.position === index);
 
     // Check if it's player's turn
-    if (this.gameState.currentTurn !== 'player') {
+    if (this.gameState.currentTurn !== 'player' || this.isComputerTurnInProgress) {
       this.gamePlay.showError('Сейчас ход компьютера!');
       return;
     }
@@ -129,7 +130,7 @@ export default class GameController {
       this.gamePlay.showCellTooltip(message, index);
     }
 
-    if (this.gameState.currentTurn !== 'player') {
+    if (this.gameState.currentTurn !== 'player' || this.isComputerTurnInProgress) {
       this.gamePlay.setCursor(cursors.auto);
       return;
     }
@@ -280,8 +281,21 @@ export default class GameController {
   }
 
   computerTurn() {
+    // Prevent multiple simultaneous computer turns
+    if (this.isComputerTurnInProgress) {
+      return;
+    }
+
+    this.isComputerTurnInProgress = true;
+
     // Use setTimeout to give visual feedback that computer is thinking
     setTimeout(() => {
+      // Double-check that it's still computer's turn
+      if (this.gameState.currentTurn !== 'computer') {
+        this.isComputerTurnInProgress = false;
+        return;
+      }
+
       const enemyTypes = ['vampire', 'undead', 'daemon'];
       const playerTypes = ['bowman', 'swordsman', 'magician'];
 
@@ -297,6 +311,7 @@ export default class GameController {
 
       if (computerCharacters.length === 0 || playerCharacters.length === 0) {
         this.gameState.currentTurn = 'player';
+        this.isComputerTurnInProgress = false;
         return;
       }
 
@@ -373,13 +388,17 @@ export default class GameController {
       } else {
         // No valid moves, switch turn back to player
         this.gameState.currentTurn = 'player';
+        this.isComputerTurnInProgress = false;
       }
     }, 500);
   }
 
   performComputerMove(fromIndex, toIndex) {
     const selectedChar = this.positions.find((pos) => pos.position === fromIndex);
-    if (!selectedChar) return;
+    if (!selectedChar) {
+      this.isComputerTurnInProgress = false;
+      return;
+    }
 
     // Move character
     selectedChar.position = toIndex;
@@ -387,13 +406,17 @@ export default class GameController {
 
     // Switch turn back to player
     this.gameState.currentTurn = 'player';
+    this.isComputerTurnInProgress = false;
   }
 
   performComputerAttack(attackerIndex, targetIndex) {
     const attacker = this.positions.find((pos) => pos.position === attackerIndex);
     const target = this.positions.find((pos) => pos.position === targetIndex);
 
-    if (!attacker || !target) return;
+    if (!attacker || !target) {
+      this.isComputerTurnInProgress = false;
+      return;
+    }
 
     // Calculate damage
     const damage = Math.max(
@@ -415,6 +438,7 @@ export default class GameController {
 
       // Switch turn back to player
       this.gameState.currentTurn = 'player';
+      this.isComputerTurnInProgress = false;
     });
   }
 }
