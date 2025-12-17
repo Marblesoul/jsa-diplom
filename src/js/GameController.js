@@ -224,7 +224,7 @@ export default class GameController {
 
     // Switch turn to computer
     this.gameState.currentTurn = 'computer';
-    // TODO: implement computer AI turn in next phase
+    this.computerTurn();
   }
 
   attackCharacter(attackerIndex, targetIndex) {
@@ -275,7 +275,146 @@ export default class GameController {
 
       // Switch turn to computer
       this.gameState.currentTurn = 'computer';
-      // TODO: implement computer AI turn in next phase
+      this.computerTurn();
+    });
+  }
+
+  computerTurn() {
+    // Use setTimeout to give visual feedback that computer is thinking
+    setTimeout(() => {
+      const enemyTypes = ['vampire', 'undead', 'daemon'];
+      const playerTypes = ['bowman', 'swordsman', 'magician'];
+
+      // Get all computer characters
+      const computerCharacters = this.positions.filter(
+        (pos) => enemyTypes.includes(pos.character.type),
+      );
+
+      // Get all player characters
+      const playerCharacters = this.positions.filter(
+        (pos) => playerTypes.includes(pos.character.type),
+      );
+
+      if (computerCharacters.length === 0 || playerCharacters.length === 0) {
+        this.gameState.currentTurn = 'player';
+        return;
+      }
+
+      // Try to find an attack opportunity
+      let bestAttack = null;
+      let lowestHealth = Infinity;
+
+      computerCharacters.forEach((compChar) => {
+        const attackCells = getAvailableAttackCells(
+          compChar.position,
+          compChar.character.attackRange,
+          this.boardSize,
+        );
+
+        playerCharacters.forEach((playerChar) => {
+          if (attackCells.includes(playerChar.position)) {
+            // Prefer attacking weakest target
+            if (playerChar.character.health < lowestHealth) {
+              lowestHealth = playerChar.character.health;
+              bestAttack = {
+                attackerIndex: compChar.position,
+                targetIndex: playerChar.position,
+              };
+            }
+          }
+        });
+      });
+
+      // If found attack opportunity, attack
+      if (bestAttack) {
+        this.performComputerAttack(bestAttack.attackerIndex, bestAttack.targetIndex);
+        return;
+      }
+
+      // If no attack opportunity, try to move closer to nearest player character
+      let bestMove = null;
+      let shortestDistance = Infinity;
+
+      computerCharacters.forEach((compChar) => {
+        const moveCells = getAvailableMoveCells(
+          compChar.position,
+          compChar.character.moveRange,
+          this.boardSize,
+        );
+
+        // Find nearest player character
+        playerCharacters.forEach((playerChar) => {
+          const targetRow = Math.floor(playerChar.position / this.boardSize);
+          const targetCol = playerChar.position % this.boardSize;
+
+          // Check each possible move position
+          moveCells.forEach((movePos) => {
+            const isOccupied = this.positions.some((pos) => pos.position === movePos);
+            if (!isOccupied) {
+              const moveRow = Math.floor(movePos / this.boardSize);
+              const moveCol = movePos % this.boardSize;
+              const distance = Math.abs(targetRow - moveRow) + Math.abs(targetCol - moveCol);
+
+              if (distance < shortestDistance) {
+                shortestDistance = distance;
+                bestMove = {
+                  fromIndex: compChar.position,
+                  toIndex: movePos,
+                };
+              }
+            }
+          });
+        });
+      });
+
+      // Perform best move if found
+      if (bestMove) {
+        this.performComputerMove(bestMove.fromIndex, bestMove.toIndex);
+      } else {
+        // No valid moves, switch turn back to player
+        this.gameState.currentTurn = 'player';
+      }
+    }, 500);
+  }
+
+  performComputerMove(fromIndex, toIndex) {
+    const selectedChar = this.positions.find((pos) => pos.position === fromIndex);
+    if (!selectedChar) return;
+
+    // Move character
+    selectedChar.position = toIndex;
+    this.gamePlay.redrawPositions(this.positions);
+
+    // Switch turn back to player
+    this.gameState.currentTurn = 'player';
+  }
+
+  performComputerAttack(attackerIndex, targetIndex) {
+    const attacker = this.positions.find((pos) => pos.position === attackerIndex);
+    const target = this.positions.find((pos) => pos.position === targetIndex);
+
+    if (!attacker || !target) return;
+
+    // Calculate damage
+    const damage = Math.max(
+      attacker.character.attack - target.character.defence,
+      attacker.character.attack * 0.1,
+    );
+
+    // Apply damage
+    target.character.health -= damage;
+
+    // Show damage animation
+    this.gamePlay.showDamage(targetIndex, damage).then(() => {
+      // Remove dead characters
+      if (target.character.health <= 0) {
+        this.positions = this.positions.filter((pos) => pos.position !== targetIndex);
+      }
+
+      this.gamePlay.redrawPositions(this.positions);
+
+      // Switch turn back to player
+      this.gameState.currentTurn = 'player';
     });
   }
 }
