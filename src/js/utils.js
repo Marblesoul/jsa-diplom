@@ -121,3 +121,19 @@ export function selectRandomPositions(availablePositions, count) {
 
   return selected;
 }
+
+/**
+ * Форматирует информацию о персонаже для отображения в тултипе
+ * @param {Character} character - объект персонажа
+ * @returns {string} форматированная строка с информацией о персонаже
+ *
+ * @example
+ * ```js
+ * const bowman = new Bowman(1);
+ * formatCharacterInfo(bowman);
+ * // Returns: "🎖1 ⚔25 🛡25 ❤50"
+ * ```
+ */
+export function formatCharacterInfo(character) {
+  return `\u{1F396}${character.level} \u{2694}${character.attack} \u{1F6E1}${character.defence} \u{2764}${character.health}`;
+}

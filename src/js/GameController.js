@@ -1,6 +1,10 @@
 import themes from './themes';
 import { generateTeam } from './generators';
-import { getPositionsForColumns, selectRandomPositions } from './utils';
+import {
+  getPositionsForColumns,
+  selectRandomPositions,
+  formatCharacterInfo,
+} from './utils';
 import PositionedCharacter from './PositionedCharacter';
 import Bowman from './characters/Bowman';
 import Swordsman from './characters/Swordsman';
@@ -61,7 +65,11 @@ export default class GameController {
     // Render all positioned characters
     this.gamePlay.redrawPositions(this.positions);
 
-    // TODO: add event listeners to gamePlay events
+    // Add event listeners to gamePlay events
+    this.gamePlay.addCellEnterListener(this.onCellEnter.bind(this));
+    this.gamePlay.addCellLeaveListener(this.onCellLeave.bind(this));
+
+    // TODO: add cellClick listener
     // TODO: load saved stated from stateService
   }
 
@@ -70,13 +78,19 @@ export default class GameController {
     // TODO: react to click
   }
 
-  // eslint-disable-next-line class-methods-use-this, no-unused-vars
-  onCellEnter(_index) {
-    // TODO: react to mouse enter
+  onCellEnter(index) {
+    // Find character at this position
+    const positionedCharacter = this.positions.find((pos) => pos.position === index);
+
+    if (positionedCharacter) {
+      // Show tooltip with character info
+      const message = formatCharacterInfo(positionedCharacter.character);
+      this.gamePlay.showCellTooltip(message, index);
+    }
   }
 
-  // eslint-disable-next-line class-methods-use-this, no-unused-vars
-  onCellLeave(_index) {
-    // TODO: react to mouse leave
+  onCellLeave(index) {
+    // Hide tooltip when leaving cell
+    this.gamePlay.hideCellTooltip(index);
   }
 }
