@@ -16,14 +16,16 @@ describe('Character', () => {
         }
       }
 
-      const char = new TestCharacter(1);
-      expect(char).toEqual({
+      const expectedTestCharacter = {
         level: 1,
         attack: 0,
         defence: 0,
         health: 50,
         type: 'test',
-      });
+      };
+
+      const char = new TestCharacter(1);
+      expect(char).toEqual(expectedTestCharacter);
     });
   });
 });

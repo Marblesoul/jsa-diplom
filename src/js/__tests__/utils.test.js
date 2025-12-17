@@ -84,51 +84,50 @@ describe('calcTileType', () => {
 });
 
 describe('formatCharacterInfo', () => {
-  test('should format character info with unicode symbols', () => {
-    const character = {
+  const testCharacters = {
+    basic: {
       level: 1,
       attack: 25,
       defence: 25,
       health: 50,
-    };
-
-    const result = formatCharacterInfo(character);
-    expect(result).toBe('🎖1 ⚔25 🛡25 ❤50');
-  });
-
-  test('should format character with different stats', () => {
-    const character = {
+    },
+    advanced: {
       level: 2,
       attack: 40,
       defence: 10,
       health: 80,
-    };
-
-    const result = formatCharacterInfo(character);
-    expect(result).toBe('🎖2 ⚔40 🛡10 ❤80');
-  });
-
-  test('should format character with maximum stats', () => {
-    const character = {
+    },
+    maxStats: {
       level: 4,
       attack: 100,
       defence: 100,
       health: 100,
-    };
-
-    const result = formatCharacterInfo(character);
-    expect(result).toBe('🎖4 ⚔100 🛡100 ❤100');
-  });
-
-  test('should format character with low health', () => {
-    const character = {
+    },
+    lowHealth: {
       level: 3,
       attack: 50,
       defence: 30,
       health: 10,
-    };
+    },
+  };
 
-    const result = formatCharacterInfo(character);
+  test('should format character info with unicode symbols', () => {
+    const result = formatCharacterInfo(testCharacters.basic);
+    expect(result).toBe('🎖1 ⚔25 🛡25 ❤50');
+  });
+
+  test('should format character with different stats', () => {
+    const result = formatCharacterInfo(testCharacters.advanced);
+    expect(result).toBe('🎖2 ⚔40 🛡10 ❤80');
+  });
+
+  test('should format character with maximum stats', () => {
+    const result = formatCharacterInfo(testCharacters.maxStats);
+    expect(result).toBe('🎖4 ⚔100 🛡100 ❤100');
+  });
+
+  test('should format character with low health', () => {
+    const result = formatCharacterInfo(testCharacters.lowHealth);
     expect(result).toBe('🎖3 ⚔50 🛡30 ❤10');
   });
 });
