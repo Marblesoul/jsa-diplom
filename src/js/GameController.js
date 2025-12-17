@@ -6,6 +6,7 @@ import {
   formatCharacterInfo,
 } from './utils';
 import PositionedCharacter from './PositionedCharacter';
+import GameState from './GameState';
 import Bowman from './characters/Bowman';
 import Swordsman from './characters/Swordsman';
 import Magician from './characters/Magician';
@@ -18,6 +19,7 @@ export default class GameController {
     this.gamePlay = gamePlay;
     this.stateService = stateService;
     this.boardSize = 8;
+    this.gameState = new GameState();
   }
 
   init() {
@@ -68,14 +70,45 @@ export default class GameController {
     // Add event listeners to gamePlay events
     this.gamePlay.addCellEnterListener(this.onCellEnter.bind(this));
     this.gamePlay.addCellLeaveListener(this.onCellLeave.bind(this));
+    this.gamePlay.addCellClickListener(this.onCellClick.bind(this));
 
-    // TODO: add cellClick listener
     // TODO: load saved stated from stateService
   }
 
-  // eslint-disable-next-line class-methods-use-this, no-unused-vars
-  onCellClick(_index) {
-    // TODO: react to click
+  onCellClick(index) {
+    // Find character at clicked position
+    const positionedCharacter = this.positions.find((pos) => pos.position === index);
+
+    // Check if it's player's turn
+    if (this.gameState.currentTurn !== 'player') {
+      this.gamePlay.showError('Сейчас ход компьютера!');
+      return;
+    }
+
+    // If clicking on a cell with a character
+    if (positionedCharacter) {
+      const { character } = positionedCharacter;
+      const playerTypes = ['bowman', 'swordsman', 'magician'];
+
+      // Check if it's a player character
+      if (playerTypes.includes(character.type)) {
+        // Deselect previous character if any
+        if (this.gameState.selectedCharacterIndex !== null) {
+          this.gamePlay.deselectCell(this.gameState.selectedCharacterIndex);
+        }
+
+        // Select new character
+        this.gameState.selectedCharacterIndex = index;
+        this.gamePlay.selectCell(index);
+      } else {
+        // Trying to select enemy character
+        this.gamePlay.showError('Вы не можете выбрать персонажа противника!');
+      }
+    } else {
+      // Clicking on empty cell
+      // TODO: implement movement/attack logic in next phases
+      this.gamePlay.showError('Выберите персонажа для действия!');
+    }
   }
 
   onCellEnter(index) {
