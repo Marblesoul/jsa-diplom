@@ -86,3 +86,6 @@ typings/
 # Thumbnails
 Thumbs.db
 Thumbs.db:encryptable
+
+# Claude Code documentation
+CLAUDE.md
