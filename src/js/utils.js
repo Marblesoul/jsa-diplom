@@ -71,3 +71,53 @@ export function calcHealthLevel(health) {
 
   return 'high';
 }
+
+/**
+ * Генерирует массив доступных позиций для указанных столбцов на доске
+ * @param {number} boardSize - размер доски (8 для доски 8x8)
+ * @param {number[]} columns - массив номеров столбцов (0-based, например [0, 1] для столбцов 1-2)
+ * @returns {number[]} массив индексов доступных позиций
+ *
+ * @example
+ * ```js
+ * // Returns: [0, 1, 8, 9, 16, 17, 24, 25, 32, 33, 40, 41, 48, 49, 56, 57]
+ * getPositionsForColumns(8, [0, 1]);
+ * ```
+ */
+export function getPositionsForColumns(boardSize, columns) {
+  const positions = [];
+  for (let row = 0; row < boardSize; row += 1) {
+    for (let col = 0; col < columns.length; col += 1) {
+      positions.push(row * boardSize + columns[col]);
+    }
+  }
+  return positions;
+}
+
+/**
+ * Выбирает случайные уникальные позиции из массива доступных позиций
+ * @param {number[]} availablePositions - массив доступных позиций
+ * @param {number} count - количество позиций для выбора
+ * @returns {number[]} массив выбранных позиций
+ *
+ * @example
+ * ```js
+ * selectRandomPositions([0, 1, 8, 9], 2); // [1, 8] (случайные)
+ * ```
+ */
+export function selectRandomPositions(availablePositions, count) {
+  if (count > availablePositions.length) {
+    throw new Error('Cannot select more positions than available');
+  }
+
+  const positions = [...availablePositions];
+  const selected = [];
+
+  for (let i = 0; i < count; i += 1) {
+    const randomIndex = Math.floor(Math.random() * positions.length);
+    selected.push(positions[randomIndex]);
+    positions.splice(randomIndex, 1);
+  }
+
+  return selected;
+}
