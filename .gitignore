@@ -87,5 +87,11 @@ typings/
 Thumbs.db
 Thumbs.db:encryptable
 
+# macOS
+.DS_Store
+
 # Claude Code documentation
 CLAUDE.md
+
+# Project TODO list
+TODO.md
