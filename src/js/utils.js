@@ -137,3 +137,49 @@ export function selectRandomPositions(availablePositions, count) {
 export function formatCharacterInfo(character) {
   return `\u{1F396}${character.level} \u{2694}${character.attack} \u{1F6E1}${character.defence} \u{2764}${character.health}`;
 }
+
+export function getAvailableMoveCells(position, moveRange, boardSize = 8) {
+  const availableCells = [];
+  const currentRow = Math.floor(position / boardSize);
+  const currentCol = position % boardSize;
+
+  const directions = [
+    [-1, 0], [1, 0], [0, -1], [0, 1],
+    [-1, -1], [-1, 1], [1, -1], [1, 1],
+  ];
+
+  directions.forEach(([rowDelta, colDelta]) => {
+    for (let distance = 1; distance <= moveRange; distance += 1) {
+      const newRow = currentRow + rowDelta * distance;
+      const newCol = currentCol + colDelta * distance;
+
+      if (newRow >= 0 && newRow < boardSize && newCol >= 0 && newCol < boardSize) {
+        const newPosition = newRow * boardSize + newCol;
+        availableCells.push(newPosition);
+      }
+    }
+  });
+
+  return availableCells;
+}
+
+export function getAvailableAttackCells(position, attackRange, boardSize = 8) {
+  const availableCells = [];
+  const currentRow = Math.floor(position / boardSize);
+  const currentCol = position % boardSize;
+
+  for (let row = 0; row < boardSize; row += 1) {
+    for (let col = 0; col < boardSize; col += 1) {
+      const rowDistance = Math.abs(row - currentRow);
+      const colDistance = Math.abs(col - currentCol);
+      const distance = Math.max(rowDistance, colDistance);
+
+      if (distance > 0 && distance <= attackRange) {
+        const cellPosition = row * boardSize + col;
+        availableCells.push(cellPosition);
+      }
+    }
+  }
+
+  return availableCells;
+}

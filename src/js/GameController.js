@@ -4,7 +4,10 @@ import {
   getPositionsForColumns,
   selectRandomPositions,
   formatCharacterInfo,
+  getAvailableMoveCells,
+  getAvailableAttackCells,
 } from './utils';
+import cursors from './cursors';
 import PositionedCharacter from './PositionedCharacter';
 import GameState from './GameState';
 import Bowman from './characters/Bowman';
@@ -112,18 +115,75 @@ export default class GameController {
   }
 
   onCellEnter(index) {
-    // Find character at this position
     const positionedCharacter = this.positions.find((pos) => pos.position === index);
 
     if (positionedCharacter) {
-      // Show tooltip with character info
       const message = formatCharacterInfo(positionedCharacter.character);
       this.gamePlay.showCellTooltip(message, index);
+    }
+
+    if (this.gameState.currentTurn !== 'player') {
+      this.gamePlay.setCursor(cursors.auto);
+      return;
+    }
+
+    const selectedPosition = this.gameState.selectedCharacterIndex;
+    if (selectedPosition === null) {
+      if (positionedCharacter) {
+        const playerTypes = ['bowman', 'swordsman', 'magician'];
+        if (playerTypes.includes(positionedCharacter.character.type)) {
+          this.gamePlay.setCursor(cursors.pointer);
+        } else {
+          this.gamePlay.setCursor(cursors.auto);
+        }
+      }
+      return;
+    }
+
+    const selectedChar = this.positions.find((pos) => pos.position === selectedPosition);
+    if (!selectedChar) return;
+
+    const { character } = selectedChar;
+    const moveCells = getAvailableMoveCells(selectedPosition, character.moveRange, this.boardSize);
+    const attackCells = getAvailableAttackCells(
+      selectedPosition,
+      character.attackRange,
+      this.boardSize,
+    );
+
+    const isOccupied = this.positions.some((pos) => pos.position === index);
+    const canMove = moveCells.includes(index) && !isOccupied;
+    const canAttack = attackCells.includes(index) && positionedCharacter;
+
+    const playerTypes = ['bowman', 'swordsman', 'magician'];
+    const isPlayerCharacter = positionedCharacter
+      && playerTypes.includes(positionedCharacter.character.type);
+
+    if (isPlayerCharacter) {
+      this.gamePlay.setCursor(cursors.pointer);
+    } else if (canMove) {
+      this.gamePlay.setCursor(cursors.pointer);
+      this.gamePlay.selectCell(index, 'green');
+    } else if (canAttack) {
+      const enemyTypes = ['vampire', 'undead', 'daemon'];
+      if (positionedCharacter && enemyTypes.includes(positionedCharacter.character.type)) {
+        this.gamePlay.setCursor(cursors.crosshair);
+        this.gamePlay.selectCell(index, 'red');
+      } else {
+        this.gamePlay.setCursor(cursors.notallowed);
+      }
+    } else {
+      this.gamePlay.setCursor(cursors.notallowed);
     }
   }
 
   onCellLeave(index) {
-    // Hide tooltip when leaving cell
     this.gamePlay.hideCellTooltip(index);
+    this.gamePlay.setCursor(cursors.auto);
+
+    const selectedPosition = this.gameState.selectedCharacterIndex;
+    if (selectedPosition !== null && index !== selectedPosition) {
+      this.gamePlay.deselectCell(index);
+    }
   }
 }

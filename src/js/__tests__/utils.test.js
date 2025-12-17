@@ -1,4 +1,9 @@
-import { calcTileType, formatCharacterInfo } from '../utils';
+import {
+  calcTileType,
+  formatCharacterInfo,
+  getAvailableMoveCells,
+  getAvailableAttackCells,
+} from '../utils';
 
 describe('calcTileType', () => {
   describe('8x8 board', () => {
@@ -125,5 +130,129 @@ describe('formatCharacterInfo', () => {
 
     const result = formatCharacterInfo(character);
     expect(result).toBe('🎖3 ⚔50 🛡30 ❤10');
+  });
+});
+
+describe('getAvailableMoveCells', () => {
+  const boardSize = 8;
+
+  test('should return correct cells for Magician (moveRange 1) at center', () => {
+    const position = 27;
+    const moveRange = 1;
+    const result = getAvailableMoveCells(position, moveRange, boardSize);
+
+    expect(result).toContain(19);
+    expect(result).toContain(35);
+    expect(result).toContain(26);
+    expect(result).toContain(28);
+    expect(result).toContain(18);
+    expect(result).toContain(20);
+    expect(result).toContain(34);
+    expect(result).toContain(36);
+    expect(result).toHaveLength(8);
+  });
+
+  test('should return correct cells for Bowman (moveRange 2) at position 0', () => {
+    const position = 0;
+    const moveRange = 2;
+    const result = getAvailableMoveCells(position, moveRange, boardSize);
+
+    expect(result).toContain(1);
+    expect(result).toContain(2);
+    expect(result).toContain(8);
+    expect(result).toContain(16);
+    expect(result).toContain(9);
+    expect(result).toContain(18);
+    expect(result.length).toBeGreaterThan(0);
+  });
+
+  test('should return correct cells for Swordsman (moveRange 4) at center', () => {
+    const position = 27;
+    const moveRange = 4;
+    const result = getAvailableMoveCells(position, moveRange, boardSize);
+
+    expect(result).toContain(19);
+    expect(result).toContain(11);
+    expect(result).toContain(3);
+    expect(result).toContain(35);
+    expect(result).toContain(43);
+    expect(result).toContain(51);
+    expect(result).toContain(59);
+    expect(result.length).toBeGreaterThan(20);
+  });
+
+  test('should not include cells outside board boundaries', () => {
+    const position = 0;
+    const moveRange = 2;
+    const result = getAvailableMoveCells(position, moveRange, boardSize);
+
+    result.forEach((cell) => {
+      expect(cell).toBeGreaterThanOrEqual(0);
+      expect(cell).toBeLessThan(boardSize * boardSize);
+    });
+  });
+});
+
+describe('getAvailableAttackCells', () => {
+  const boardSize = 8;
+
+  test('should return correct cells for Swordsman (attackRange 1) at center', () => {
+    const position = 27;
+    const attackRange = 1;
+    const result = getAvailableAttackCells(position, attackRange, boardSize);
+
+    expect(result).toContain(19);
+    expect(result).toContain(35);
+    expect(result).toContain(26);
+    expect(result).toContain(28);
+    expect(result).toContain(18);
+    expect(result).toContain(20);
+    expect(result).toContain(34);
+    expect(result).toContain(36);
+    expect(result).toHaveLength(8);
+  });
+
+  test('should return correct cells for Bowman (attackRange 2) at position 0', () => {
+    const position = 0;
+    const attackRange = 2;
+    const result = getAvailableAttackCells(position, attackRange, boardSize);
+
+    expect(result).toContain(1);
+    expect(result).toContain(2);
+    expect(result).toContain(8);
+    expect(result).toContain(16);
+    expect(result).toContain(9);
+    expect(result).toContain(18);
+    expect(result).toContain(10);
+    expect(result.length).toBeGreaterThan(5);
+  });
+
+  test('should return correct cells for Magician (attackRange 4) at center', () => {
+    const position = 27;
+    const attackRange = 4;
+    const result = getAvailableAttackCells(position, attackRange, boardSize);
+
+    expect(result.length).toBeGreaterThan(40);
+    expect(result).toContain(0);
+    expect(result).toContain(63);
+  });
+
+  test('should not include the character own position', () => {
+    const position = 27;
+    const attackRange = 4;
+    const result = getAvailableAttackCells(position, attackRange, boardSize);
+
+    expect(result).not.toContain(position);
+  });
+
+  test('should not include cells outside board boundaries', () => {
+    const position = 0;
+    const attackRange = 4;
+    const result = getAvailableAttackCells(position, attackRange, boardSize);
+
+    result.forEach((cell) => {
+      expect(cell).toBeGreaterThanOrEqual(0);
+      expect(cell).toBeLessThan(boardSize * boardSize);
+    });
   });
 });

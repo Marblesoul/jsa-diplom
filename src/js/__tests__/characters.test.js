@@ -15,6 +15,8 @@ describe('Character classes', () => {
         defence: 25,
         health: 50,
         type: 'bowman',
+        moveRange: 2,
+        attackRange: 2,
       });
     });
 
@@ -26,6 +28,8 @@ describe('Character classes', () => {
         defence: 10,
         health: 50,
         type: 'swordsman',
+        moveRange: 4,
+        attackRange: 1,
       });
     });
 
@@ -37,6 +41,8 @@ describe('Character classes', () => {
         defence: 40,
         health: 50,
         type: 'magician',
+        moveRange: 1,
+        attackRange: 4,
       });
     });
   });
@@ -50,6 +56,8 @@ describe('Character classes', () => {
         defence: 25,
         health: 50,
         type: 'vampire',
+        moveRange: 2,
+        attackRange: 2,
       });
     });
 
@@ -61,6 +69,8 @@ describe('Character classes', () => {
         defence: 10,
         health: 50,
         type: 'undead',
+        moveRange: 4,
+        attackRange: 1,
       });
     });
 
@@ -72,6 +82,8 @@ describe('Character classes', () => {
         defence: 10,
         health: 50,
         type: 'daemon',
+        moveRange: 1,
+        attackRange: 4,
       });
     });
   });
