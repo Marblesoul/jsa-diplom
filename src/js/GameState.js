@@ -1,5 +1,6 @@
 export default class GameState {
-  static from(object) {
+  // eslint-disable-next-line no-unused-vars
+  static from(_object) {
     // TODO: create object
     return null;
   }

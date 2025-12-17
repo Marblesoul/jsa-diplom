@@ -8,7 +8,8 @@
  * возвращает новый экземпляр класса персонажа
  *
  */
-export function* characterGenerator(allowedTypes, maxLevel) {
+// eslint-disable-next-line no-unused-vars
+export function* characterGenerator(_allowedTypes, _maxLevel) {
   // TODO: write logic here
 }
 
@@ -17,8 +18,10 @@ export function* characterGenerator(allowedTypes, maxLevel) {
  * @param allowedTypes массив классов
  * @param maxLevel максимальный возможный уровень персонажа
  * @param characterCount количество персонажей, которое нужно сформировать
- * @returns экземпляр Team, хранящий экземпляры персонажей. Количество персонажей в команде - characterCount
+ * @returns экземпляр Team, хранящий экземпляры персонажей.
+ * Количество персонажей в команде - characterCount
  * */
-export function generateTeam(allowedTypes, maxLevel, characterCount) {
+// eslint-disable-next-line no-unused-vars
+export function generateTeam(_allowedTypes, _maxLevel, _characterCount) {
   // TODO: write logic here
 }

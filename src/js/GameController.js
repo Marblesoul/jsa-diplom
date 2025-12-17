@@ -1,3 +1,5 @@
+import themes from './themes';
+
 export default class GameController {
   constructor(gamePlay, stateService) {
     this.gamePlay = gamePlay;
@@ -5,19 +7,25 @@ export default class GameController {
   }
 
   init() {
+    // Draw initial board with prairie theme
+    this.gamePlay.drawUi(themes.prairie);
+
     // TODO: add event listeners to gamePlay events
     // TODO: load saved stated from stateService
   }
 
-  onCellClick(index) {
+  // eslint-disable-next-line class-methods-use-this, no-unused-vars
+  onCellClick(_index) {
     // TODO: react to click
   }
 
-  onCellEnter(index) {
+  // eslint-disable-next-line class-methods-use-this, no-unused-vars
+  onCellEnter(_index) {
     // TODO: react to mouse enter
   }
 
-  onCellLeave(index) {
+  // eslint-disable-next-line class-methods-use-this, no-unused-vars
+  onCellLeave(_index) {
     // TODO: react to mouse leave
   }
 }
