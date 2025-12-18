@@ -274,6 +274,12 @@ export default class GameController {
       this.gameState.selectedCharacterIndex = null;
       this.gamePlay.redrawPositions(this.positions);
 
+      this.checkLevelComplete();
+
+      if (this.gameState.currentTurn === null) {
+        return;
+      }
+
       // Switch turn to computer
       this.gameState.currentTurn = 'computer';
       this.computerTurn();
@@ -436,9 +442,98 @@ export default class GameController {
 
       this.gamePlay.redrawPositions(this.positions);
 
+      this.checkGameOver();
+
       // Switch turn back to player
       this.gameState.currentTurn = 'player';
       this.isComputerTurnInProgress = false;
     });
+  }
+
+  checkLevelComplete() {
+    const enemyTypes = ['vampire', 'undead', 'daemon'];
+    const enemiesLeft = this.positions.filter(
+      (pos) => enemyTypes.includes(pos.character.type),
+    );
+
+    if (enemiesLeft.length === 0) {
+      this.startNextLevel();
+    }
+  }
+
+  checkGameOver() {
+    const playerTypes = ['bowman', 'swordsman', 'magician'];
+    const playersLeft = this.positions.filter(
+      (pos) => playerTypes.includes(pos.character.type),
+    );
+
+    if (playersLeft.length === 0) {
+      this.gamePlay.showMessage('Game Over! Вы проиграли.');
+      this.gameState.currentTurn = null;
+    }
+  }
+
+  startNextLevel() {
+    if (this.gameState.level >= 4) {
+      this.gamePlay.showMessage('Поздравляем! Вы прошли все уровни!');
+      this.gameState.currentTurn = null;
+      return;
+    }
+
+    this.gameState.level += 1;
+
+    const playerTypes = ['bowman', 'swordsman', 'magician'];
+    const survivingPlayers = this.positions.filter(
+      (pos) => playerTypes.includes(pos.character.type),
+    );
+
+    survivingPlayers.forEach((posChar) => {
+      posChar.character.levelUp();
+    });
+
+    const themeMap = {
+      1: themes.prairie,
+      2: themes.desert,
+      3: themes.arctic,
+      4: themes.mountain,
+    };
+    this.gamePlay.drawUi(themeMap[this.gameState.level]);
+
+    const enemyTypes = [Vampire, Undead, Daemon];
+    const enemyCount = survivingPlayers.length + 1;
+    this.enemyTeam = generateTeam(enemyTypes, this.gameState.level, enemyCount);
+
+    const playerColumns = [0, 1];
+    const enemyColumns = [6, 7];
+
+    const playerPositions = getPositionsForColumns(this.boardSize, playerColumns);
+    const enemyPositions = getPositionsForColumns(this.boardSize, enemyColumns);
+
+    const selectedPlayerPositions = selectRandomPositions(
+      playerPositions,
+      survivingPlayers.length,
+    );
+    const selectedEnemyPositions = selectRandomPositions(
+      enemyPositions,
+      this.enemyTeam.characters.length,
+    );
+
+    this.positions = [];
+
+    survivingPlayers.forEach((posChar, index) => {
+      const updatedPosChar = posChar;
+      updatedPosChar.position = selectedPlayerPositions[index];
+      this.positions.push(updatedPosChar);
+    });
+
+    this.enemyTeam.characters.forEach((character, index) => {
+      this.positions.push(
+        new PositionedCharacter(character, selectedEnemyPositions[index]),
+      );
+    });
+
+    this.gamePlay.redrawPositions(this.positions);
+    this.gameState.currentTurn = 'player';
+    this.gameState.selectedCharacterIndex = null;
   }
 }

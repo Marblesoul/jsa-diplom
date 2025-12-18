@@ -20,7 +20,21 @@ export default class Character {
     this.level = level;
     this.attack = 0;
     this.defence = 0;
-    this.health = 50;
+    this.health = 100;
     this.type = type;
+  }
+
+  /**
+   * Повышает уровень персонажа на 1
+   * Применяет формулы согласно спецификации:
+   * - Health: current + 80 (max 100)
+   * - Attack/Defence: Math.max(current, current * (80 + health) / 100)
+   */
+  levelUp() {
+    const currentHealth = this.health;
+    this.level += 1;
+    this.attack = Math.max(this.attack, Math.floor((this.attack * (80 + currentHealth)) / 100));
+    this.defence = Math.max(this.defence, Math.floor((this.defence * (80 + currentHealth)) / 100));
+    this.health = Math.min(currentHealth + 80, 100);
   }
 }
