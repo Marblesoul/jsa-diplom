@@ -75,8 +75,64 @@ export default class GameController {
     this.gamePlay.addCellEnterListener(this.onCellEnter.bind(this));
     this.gamePlay.addCellLeaveListener(this.onCellLeave.bind(this));
     this.gamePlay.addCellClickListener(this.onCellClick.bind(this));
+    this.gamePlay.addNewGameListener(this.onNewGame.bind(this));
 
     // TODO: load saved stated from stateService
+  }
+
+  onNewGame() {
+    this.resetGame();
+  }
+
+  resetGame() {
+    if (this.gameState.score > this.gameState.maxScore) {
+      this.gameState.maxScore = this.gameState.score;
+    }
+
+    this.gameState.score = 0;
+    this.gameState.level = 1;
+    this.gameState.currentTurn = 'player';
+    this.gameState.selectedCharacterIndex = null;
+    this.isComputerTurnInProgress = false;
+
+    this.gamePlay.drawUi(themes.prairie);
+
+    const playerTypes = [Bowman, Swordsman, Magician];
+    const enemyTypes = [Vampire, Undead, Daemon];
+
+    this.playerTeam = generateTeam(playerTypes, 1, 2);
+    this.enemyTeam = generateTeam(enemyTypes, 1, 2);
+
+    const playerColumns = [0, 1];
+    const enemyColumns = [6, 7];
+
+    const playerPositions = getPositionsForColumns(this.boardSize, playerColumns);
+    const enemyPositions = getPositionsForColumns(this.boardSize, enemyColumns);
+
+    const selectedPlayerPositions = selectRandomPositions(
+      playerPositions,
+      this.playerTeam.characters.length,
+    );
+    const selectedEnemyPositions = selectRandomPositions(
+      enemyPositions,
+      this.enemyTeam.characters.length,
+    );
+
+    this.positions = [];
+
+    this.playerTeam.characters.forEach((character, index) => {
+      this.positions.push(
+        new PositionedCharacter(character, selectedPlayerPositions[index]),
+      );
+    });
+
+    this.enemyTeam.characters.forEach((character, index) => {
+      this.positions.push(
+        new PositionedCharacter(character, selectedEnemyPositions[index]),
+      );
+    });
+
+    this.gamePlay.redrawPositions(this.positions);
   }
 
   onCellClick(index) {
@@ -261,6 +317,8 @@ export default class GameController {
 
     // Apply damage
     target.character.health -= damage;
+
+    this.gameState.score += Math.floor(damage);
 
     // Show damage animation
     this.gamePlay.showDamage(targetIndex, damage).then(() => {
@@ -468,14 +526,20 @@ export default class GameController {
     );
 
     if (playersLeft.length === 0) {
-      this.gamePlay.showMessage('Game Over! Вы проиграли.');
+      if (this.gameState.score > this.gameState.maxScore) {
+        this.gameState.maxScore = this.gameState.score;
+      }
+      this.gamePlay.showMessage(`Game Over! Вы проиграли.\nВаш счет: ${this.gameState.score}\nМаксимальный счет: ${this.gameState.maxScore}`);
       this.gameState.currentTurn = null;
     }
   }
 
   startNextLevel() {
     if (this.gameState.level >= 4) {
-      this.gamePlay.showMessage('Поздравляем! Вы прошли все уровни!');
+      if (this.gameState.score > this.gameState.maxScore) {
+        this.gameState.maxScore = this.gameState.score;
+      }
+      this.gamePlay.showMessage(`Поздравляем! Вы прошли все уровни!\nВаш счет: ${this.gameState.score}\nМаксимальный счет: ${this.gameState.maxScore}`);
       this.gameState.currentTurn = null;
       return;
     }
