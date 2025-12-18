@@ -65,10 +65,10 @@ export default class GameState {
           throw new Error(`Unknown character type: ${posData.character.type}`);
         }
 
-        const character = new CharClass(1);
-        character.level = posData.character.level;
-        character.attack = posData.character.attack;
-        character.defence = posData.character.defence;
+        // Create character with correct level (applies levelUp logic automatically)
+        const character = new CharClass(posData.character.level);
+
+        // Only correct health (may differ from 100 after battle)
         character.health = posData.character.health;
 
         return new PositionedCharacter(character, posData.position);

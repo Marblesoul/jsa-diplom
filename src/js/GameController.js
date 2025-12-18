@@ -10,6 +10,7 @@ import {
 import cursors from './cursors';
 import PositionedCharacter from './PositionedCharacter';
 import GameState from './GameState';
+import GamePlay from './GamePlay';
 import Bowman from './characters/Bowman';
 import Swordsman from './characters/Swordsman';
 import Magician from './characters/Magician';
@@ -29,6 +30,49 @@ export default class GameController {
   init() {
     // Draw initial board with prairie theme
     this.gamePlay.drawUi(themes.prairie);
+
+    // Add event listeners once
+    this.addEventListeners();
+
+    // Try to load saved game first
+    if (!this.loadGame()) {
+      // Only if load failed - create new game
+      this.setupNewGame();
+    }
+  }
+
+  addEventListeners() {
+    this.gamePlay.addCellEnterListener(this.onCellEnter.bind(this));
+    this.gamePlay.addCellLeaveListener(this.onCellLeave.bind(this));
+    this.gamePlay.addCellClickListener(this.onCellClick.bind(this));
+    this.gamePlay.addNewGameListener(this.onNewGame.bind(this));
+    this.gamePlay.addSaveGameListener(this.onSaveGame.bind(this));
+    this.gamePlay.addLoadGameListener(this.onLoadGame.bind(this));
+
+    // Auto-save on page unload
+    window.addEventListener('beforeunload', () => {
+      if (this.gameState.currentTurn !== null) {
+        this.saveGame();
+      }
+    });
+  }
+
+  setupNewGame(level = 1) {
+    // Reset game state
+    this.gameState.level = level;
+    this.gameState.score = 0;
+    this.gameState.currentTurn = 'player';
+    this.gameState.selectedCharacterIndex = null;
+    this.isComputerTurnInProgress = false;
+
+    // Set theme based on level
+    const themeMap = {
+      1: themes.prairie,
+      2: themes.desert,
+      3: themes.arctic,
+      4: themes.mountain,
+    };
+    this.gamePlay.drawUi(themeMap[level] || themes.prairie);
 
     // Generate player and enemy teams
     const playerTypes = [Bowman, Swordsman, Magician];
@@ -70,26 +114,16 @@ export default class GameController {
 
     // Render all positioned characters
     this.gamePlay.redrawPositions(this.positions);
-
-    // Add event listeners to gamePlay events
-    this.gamePlay.addCellEnterListener(this.onCellEnter.bind(this));
-    this.gamePlay.addCellLeaveListener(this.onCellLeave.bind(this));
-    this.gamePlay.addCellClickListener(this.onCellClick.bind(this));
-    this.gamePlay.addNewGameListener(this.onNewGame.bind(this));
-    this.gamePlay.addSaveGameListener(this.onSaveGame.bind(this));
-    this.gamePlay.addLoadGameListener(this.onLoadGame.bind(this));
-
-    this.loadGame();
   }
 
   onSaveGame() {
     this.saveGame();
-    this.gamePlay.showMessage('Игра сохранена!');
+    GamePlay.showMessage('Игра сохранена!');
   }
 
   onLoadGame() {
     if (this.loadGame()) {
-      this.gamePlay.showMessage('Игра загружена!');
+      GamePlay.showMessage('Игра загружена!');
     }
   }
 
@@ -109,6 +143,9 @@ export default class GameController {
       this.gameState = state;
       this.positions = state.positions;
 
+      // Reset computer turn flag to prevent blocking
+      this.isComputerTurnInProgress = false;
+
       const themeMap = {
         1: themes.prairie,
         2: themes.desert,
@@ -118,9 +155,14 @@ export default class GameController {
       this.gamePlay.drawUi(themeMap[this.gameState.level] || themes.prairie);
       this.gamePlay.redrawPositions(this.positions);
 
+      // If it's computer's turn after loading, resume computer turn
+      if (this.gameState.currentTurn === 'computer') {
+        this.computerTurn();
+      }
+
       return true;
     } catch (e) {
-      this.gamePlay.showError('Не удалось загрузить игру');
+      GamePlay.showError('Не удалось загрузить игру');
       return false;
     }
   }
@@ -130,63 +172,28 @@ export default class GameController {
   }
 
   resetGame() {
+    // Save max score before reset
     if (this.gameState.score > this.gameState.maxScore) {
       this.gameState.maxScore = this.gameState.score;
     }
 
-    this.gameState.score = 0;
-    this.gameState.level = 1;
-    this.gameState.currentTurn = 'player';
-    this.gameState.selectedCharacterIndex = null;
-    this.isComputerTurnInProgress = false;
-
-    this.gamePlay.drawUi(themes.prairie);
-
-    const playerTypes = [Bowman, Swordsman, Magician];
-    const enemyTypes = [Vampire, Undead, Daemon];
-
-    this.playerTeam = generateTeam(playerTypes, 1, 2);
-    this.enemyTeam = generateTeam(enemyTypes, 1, 2);
-
-    const playerColumns = [0, 1];
-    const enemyColumns = [6, 7];
-
-    const playerPositions = getPositionsForColumns(this.boardSize, playerColumns);
-    const enemyPositions = getPositionsForColumns(this.boardSize, enemyColumns);
-
-    const selectedPlayerPositions = selectRandomPositions(
-      playerPositions,
-      this.playerTeam.characters.length,
-    );
-    const selectedEnemyPositions = selectRandomPositions(
-      enemyPositions,
-      this.enemyTeam.characters.length,
-    );
-
-    this.positions = [];
-
-    this.playerTeam.characters.forEach((character, index) => {
-      this.positions.push(
-        new PositionedCharacter(character, selectedPlayerPositions[index]),
-      );
-    });
-
-    this.enemyTeam.characters.forEach((character, index) => {
-      this.positions.push(
-        new PositionedCharacter(character, selectedEnemyPositions[index]),
-      );
-    });
-
-    this.gamePlay.redrawPositions(this.positions);
+    // Use common setup method
+    this.setupNewGame();
   }
 
   onCellClick(index) {
+    // Check if game is over
+    if (this.gameState.currentTurn === null) {
+      GamePlay.showError('Игра окончена! Нажмите "New Game" для начала новой игры.');
+      return;
+    }
+
     // Find character at clicked position
     const positionedCharacter = this.positions.find((pos) => pos.position === index);
 
     // Check if it's player's turn
     if (this.gameState.currentTurn !== 'player' || this.isComputerTurnInProgress) {
-      this.gamePlay.showError('Сейчас ход компьютера!');
+      GamePlay.showError('Сейчас ход компьютера!');
       return;
     }
 
@@ -211,7 +218,7 @@ export default class GameController {
         if (this.gameState.selectedCharacterIndex !== null) {
           this.attackCharacter(this.gameState.selectedCharacterIndex, index);
         } else {
-          this.gamePlay.showError('Вы не можете выбрать персонажа противника!');
+          GamePlay.showError('Вы не можете выбрать персонажа противника!');
         }
       }
     } else if (this.gameState.selectedCharacterIndex !== null) {
@@ -219,7 +226,7 @@ export default class GameController {
       this.moveCharacter(this.gameState.selectedCharacterIndex, index);
     } else {
       // Clicking on empty cell with no character selected
-      this.gamePlay.showError('Выберите персонажа для действия!');
+      GamePlay.showError('Выберите персонажа для действия!');
     }
   }
 
@@ -229,6 +236,12 @@ export default class GameController {
     if (positionedCharacter) {
       const message = formatCharacterInfo(positionedCharacter.character);
       this.gamePlay.showCellTooltip(message, index);
+    }
+
+    // Check if game is over
+    if (this.gameState.currentTurn === null) {
+      this.gamePlay.setCursor(cursors.notallowed);
+      return;
     }
 
     if (this.gameState.currentTurn !== 'player' || this.isComputerTurnInProgress) {
@@ -305,14 +318,14 @@ export default class GameController {
 
     // Check if target cell is in available move cells
     if (!moveCells.includes(toIndex)) {
-      this.gamePlay.showError('Персонаж не может переместиться на эту клетку!');
+      GamePlay.showError('Персонаж не может переместиться на эту клетку!');
       return;
     }
 
     // Check if target cell is occupied
     const isOccupied = this.positions.some((pos) => pos.position === toIndex);
     if (isOccupied) {
-      this.gamePlay.showError('Эта клетка уже занята!');
+      GamePlay.showError('Эта клетка уже занята!');
       return;
     }
 
@@ -345,14 +358,14 @@ export default class GameController {
 
     // Check if target is in attack range
     if (!attackCells.includes(targetIndex)) {
-      this.gamePlay.showError('Цель находится вне радиуса атаки!');
+      GamePlay.showError('Цель находится вне радиуса атаки!');
       return;
     }
 
     // Check if target is enemy
     const enemyTypes = ['vampire', 'undead', 'daemon'];
     if (!enemyTypes.includes(target.character.type)) {
-      this.gamePlay.showError('Вы не можете атаковать своего персонажа!');
+      GamePlay.showError('Вы не можете атаковать своего персонажа!');
       return;
     }
 
@@ -582,7 +595,7 @@ export default class GameController {
       if (this.gameState.score > this.gameState.maxScore) {
         this.gameState.maxScore = this.gameState.score;
       }
-      this.gamePlay.showMessage(`Game Over! Вы проиграли.\nВаш счет: ${this.gameState.score}\nМаксимальный счет: ${this.gameState.maxScore}`);
+      GamePlay.showMessage(`Game Over! Вы проиграли.\nВаш счет: ${this.gameState.score}\nМаксимальный счет: ${this.gameState.maxScore}`);
       this.gameState.currentTurn = null;
     }
   }
@@ -592,7 +605,7 @@ export default class GameController {
       if (this.gameState.score > this.gameState.maxScore) {
         this.gameState.maxScore = this.gameState.score;
       }
-      this.gamePlay.showMessage(`Поздравляем! Вы прошли все уровни!\nВаш счет: ${this.gameState.score}\nМаксимальный счет: ${this.gameState.maxScore}`);
+      GamePlay.showMessage(`Поздравляем! Вы прошли все уровни!\nВаш счет: ${this.gameState.score}\nМаксимальный счет: ${this.gameState.maxScore}`);
       this.gameState.currentTurn = null;
       return;
     }
