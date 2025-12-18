@@ -76,8 +76,53 @@ export default class GameController {
     this.gamePlay.addCellLeaveListener(this.onCellLeave.bind(this));
     this.gamePlay.addCellClickListener(this.onCellClick.bind(this));
     this.gamePlay.addNewGameListener(this.onNewGame.bind(this));
+    this.gamePlay.addSaveGameListener(this.onSaveGame.bind(this));
+    this.gamePlay.addLoadGameListener(this.onLoadGame.bind(this));
 
-    // TODO: load saved stated from stateService
+    this.loadGame();
+  }
+
+  onSaveGame() {
+    this.saveGame();
+    this.gamePlay.showMessage('Игра сохранена!');
+  }
+
+  onLoadGame() {
+    if (this.loadGame()) {
+      this.gamePlay.showMessage('Игра загружена!');
+    }
+  }
+
+  saveGame() {
+    this.gameState.positions = this.positions;
+    this.stateService.save(this.gameState.toJSON());
+  }
+
+  loadGame() {
+    try {
+      const savedState = this.stateService.load();
+      if (!savedState) {
+        return false;
+      }
+
+      const state = GameState.from(savedState);
+      this.gameState = state;
+      this.positions = state.positions;
+
+      const themeMap = {
+        1: themes.prairie,
+        2: themes.desert,
+        3: themes.arctic,
+        4: themes.mountain,
+      };
+      this.gamePlay.drawUi(themeMap[this.gameState.level] || themes.prairie);
+      this.gamePlay.redrawPositions(this.positions);
+
+      return true;
+    } catch (e) {
+      this.gamePlay.showError('Не удалось загрузить игру');
+      return false;
+    }
   }
 
   onNewGame() {
@@ -279,6 +324,8 @@ export default class GameController {
     this.gameState.selectedCharacterIndex = null;
     this.gamePlay.redrawPositions(this.positions);
 
+    this.saveGame();
+
     // Switch turn to computer
     this.gameState.currentTurn = 'computer';
     this.computerTurn();
@@ -337,6 +384,8 @@ export default class GameController {
       if (this.gameState.currentTurn === null) {
         return;
       }
+
+      this.saveGame();
 
       // Switch turn to computer
       this.gameState.currentTurn = 'computer';
@@ -468,6 +517,8 @@ export default class GameController {
     selectedChar.position = toIndex;
     this.gamePlay.redrawPositions(this.positions);
 
+    this.saveGame();
+
     // Switch turn back to player
     this.gameState.currentTurn = 'player';
     this.isComputerTurnInProgress = false;
@@ -501,6 +552,8 @@ export default class GameController {
       this.gamePlay.redrawPositions(this.positions);
 
       this.checkGameOver();
+
+      this.saveGame();
 
       // Switch turn back to player
       this.gameState.currentTurn = 'player';
