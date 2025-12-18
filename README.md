@@ -1,5 +1,7 @@
 # Дипломное задание к курсу «Продвинутый JavaScript». Retro Game
 
+🎮 **[Играть в игру](https://Marblesoul.github.io/jsa-diplom)**
+
 ###### tags: `netology` `advanced js`
 
 ## Предыстория
